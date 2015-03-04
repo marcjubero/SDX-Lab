@@ -10,16 +10,16 @@ start() ->
 process_requests(Clients) ->
     receive
         {client_join_req, Name, From} ->
-            NewClients = [...|Clients],  %% TODO: COMPLETE
+            NewClients = [From|Clients],  %% TODO: COMPLETE
             broadcast(NewClients, {join, Name}),
-            process_requests(...);  %% TODO: COMPLETE
+            process_requests(NewClients);  %% TODO: COMPLETE
         {client_leave_req, Name, From} ->
-            NewClients = lists:delete(..., ...),  %% TODO: COMPLETE
-            broadcast(Clients, ...),  %% TODO: COMPLETE
+            NewClients = lists:delete(From, Clients),  %% TODO: COMPLETE
+            broadcast(Clients, {leave,Name}),  %% TODO: COMPLETE
             From ! exit,
-            process_requests(...);  %% TODO: COMPLETE
+            process_requests(NewClients);  %% TODO: COMPLETE
         {send, Name, Text} ->
-            broadcast(..., ...),  %% TODO: COMPLETE
+            broadcast(Clients, {message,Name,Text}),  %% TODO: COMPLETE
             process_requests(Clients);
         disconnect ->
             unregister(myserver)
