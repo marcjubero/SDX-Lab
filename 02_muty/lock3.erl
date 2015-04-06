@@ -39,12 +39,6 @@ request(Node,MyId) ->
 	Node ! {request, self(), R, MyId}, 
 	R.
 
-max(A,B) ->
-	if
-		A > B -> A.
-	end,
-	B.
-
 wait(Nodes, Master, [], Waiting,MyId,TS) ->
     Master ! taken,
     held(Nodes, Waiting, MyId,TS);
@@ -59,7 +53,7 @@ wait(Nodes, Master, Refs, Waiting,MyId,TS) ->
 			    wait(Nodes, Master, NewRefs, Waiting,MyId,TS);
 			TSR > TS ->
 				wait(Nodes, Master, Refs, [{From, Ref}|Waiting],MyId,TSR);
-			TSR = TS ->
+			TSR == TS ->
 				if
 				  Id < MyId ->  
 						N = request(From, MyId),
@@ -68,8 +62,8 @@ wait(Nodes, Master, Refs, Waiting,MyId,TS) ->
 						wait(Nodes, Master, NewRefs, Waiting,MyId,TS);
 				  Id > MyId -> 
 						wait(Nodes, Master, Refs, [{From, Ref}|Waiting],MyId,TS)
-				end;
-			end;
+				end
+		end;
         {ok, Ref} ->
             NewRefs = lists:delete(Ref, Refs),
             wait(Nodes, Master, NewRefs, Waiting,MyId,TS);
