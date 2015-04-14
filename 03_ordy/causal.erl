@@ -1,4 +1,4 @@
--module(basic).
+-module(causal).
 -export([start/3]).
 
 start(Id, Master, Jitter) ->
@@ -15,14 +15,15 @@ init(Id, Master, Jitter) ->
 server(Id, Master, Nodes, Jitter, VC, Queue) ->
     receive
         {send, Msg} ->
-            multicast(Msg, Nodes, Jitter),
+	    NewVC = setelement(Id,VC,element(Id,VC)+1),
+            multicast(Msg, Nodes, Jitter, Id, NewVC),
             Master ! {deliver, Msg},
-            server(Id, Master, Nodes, Jitter);
+            server(Id, Master, Nodes, Jitter, NewVC, Queue);
         {multicast, Msg, FromId, MsgVC} ->
             case checkMsg(FromId, MsgVC, VC, size(VC)) of
 		ready ->
 		    Master ! {deliver, Msg},
-		    NewVC = ... %% TODO: COMPLETE
+		    NewVC = setelement(FromId,VC,element(FromId,VC)+1), %% TODO: COMPLETE
 		    {NewerVC, NewQueue} = deliverReadyMsgs(Master, NewVC, Queue, Queue),
 		    server(Id, Master, Nodes, Jitter, NewerVC, NewQueue);
 		wait ->
@@ -32,15 +33,15 @@ server(Id, Master, Nodes, Jitter, VC, Queue) ->
             ok
     end.
 
-multicast(Msg, Nodes, 0) ->
+multicast(Msg, Nodes, 0, Id, VC) ->
     lists:foreach(fun(Node) -> 
-                      Node ! {multicast, Msg} 
+                      Node ! {multicast, Msg, Id, VC} 
                   end, 
                   Nodes);
-multicast(Msg, Nodes, Jitter) ->
+multicast(Msg, Nodes, Jitter, Id, VC) ->
     lists:foreach(fun(Node) -> 
                       T = random:uniform(Jitter),
-                      timer:send_after(T, Node, {multicast, Msg})
+                      timer:send_after(T, Node, {multicast, Msg, Id, VC})
                   end, 
                   Nodes).
                 
@@ -54,13 +55,13 @@ checkMsg(_, _, _, 0) ->
     ready;
     
 checkMsg(FromId, MsgVC, VC, FromId) ->
-    if (... == ...) -> %% TODO: COMPLETE
+    if (element(FromId,MsgVC) == element(FromId,VC)+1) -> %% TODO: COMPLETE
 	checkMsg(FromId, MsgVC, VC, FromId-1);
 	true -> wait
     end;
 
 checkMsg(FromId, MsgVC, VC, N) ->
-    if (... =< ...) -> %% TODO: COMPLETE
+    if (element(N,MsgVC) =< element(N,VC)) -> %% TODO: COMPLETE
 	checkMsg(FromId, MsgVC, VC, N-1);
 	true -> wait
     end.
@@ -74,7 +75,7 @@ deliverReadyMsgs(Master, VC, [{FromId, MsgVC, Msg}|Rest], Queue) ->
     case checkMsg(FromId, MsgVC, VC, size(VC)) of
 	ready ->
 	    Master ! {deliver, Msg},
-	    NewVC = ... %% TODO: COMPLETE
+	    NewVC = setelement(FromId,VC,element(FromId,VC)+1), %% TODO: COMPLETE
 	    NewQueue = lists:delete({FromId, MsgVC, Msg}, Queue),
 	    deliverReadyMsgs(Master, NewVC, NewQueue, NewQueue);
 	wait ->
