@@ -20,15 +20,15 @@ receive
         NewCast = cast(Ref, Nodes, Cast),
         server(Master, MaxPrp, MaxAgr, Nodes, NewCast, Queue, Jitter);
     {request, From, Ref, Msg} ->
-        NewMaxPrp = max(MaxPrp, MaxAgr)+1,
+        NewMaxPrp = seq:increment(seq:max(MaxPrp, MaxAgr)),
         From ! {proposal, Ref , NewMaxPrp},
         NewQueue = insert(Ref, Msg, NewMaxPrp, Queue),
-        server(Master, MaxPrp, MaxAgr, Nodes, Cast, NewQueue, Jitter);
+        server(Master, NewMaxPrp, MaxAgr, Nodes, Cast, NewQueue, Jitter);
     {proposal, Ref, Proposal} ->
         case proposal(Ref, Proposal, Cast) of
             {agreed, MaxSeq, NewCast} ->
                 agree(Ref, MaxSeq, Nodes),
-                server(Master, MaxSeq, MaxSeq, Nodes, NewCast, Queue, Jitter);
+                server(Master, MaxPrp, MaxSeq, Nodes, NewCast, Queue, Jitter);
             NewCast ->
                 server(Master, MaxPrp, MaxAgr, Nodes, NewCast, Queue, Jitter)
         end;
@@ -36,7 +36,7 @@ receive
         Updated = update(Ref, Seq, Queue),
         {Agreed, NewQueue} = agreed(Updated),
         deliver(Master, Agreed),
-        NewMaxAgr = Seq,
+        NewMaxAgr = seq:max(Seq,MaxAgr),
         server(Master, MaxPrp, NewMaxAgr, Nodes, Cast, NewQueue, Jitter);
     stop ->
         ok
