@@ -24,13 +24,14 @@ init(Name, Grp, Master) ->
 leader(Name, Master, Slaves) ->    
     receive
         {mcast, Msg} ->
-            bcast(Name, ..., ...),  %% TODO: COMPLETE
-            %% TODO: ADD SOME CODE
+            bcast(Name, {msg, Msg}, Slaves),  %% DONE: COMPLETE
+            Master ! {deliver, Msg},
+            %% DONE: ADD SOME CODE
             leader(Name, Master, Slaves);
         {join, Peer} ->
             NewSlaves = lists:append(Slaves, [Peer]),           
-            bcast(Name, ..., ...),  %% TODO: COMPLETE
-            leader(Name, Master, ...);  %% TODO: COMPLETE
+            bcast(Name, {view, self(), NewSlaves}, NewSlaves),  %% DONE: COMPLETE
+            leader(Name, Master, NewSlaves);  %% DONE: COMPLETE
         stop ->
             ok;
         Error ->
@@ -43,16 +44,19 @@ bcast(_, Msg, Nodes) ->
 slave(Name, Master, Leader, Slaves) ->    
     receive
         {mcast, Msg} ->
-            %% TODO: ADD SOME CODE
+            %% DONE: ADD SOME CODE
+            Leader ! {mcast, Msg},
             slave(Name, Master, Leader, Slaves);
         {join, Peer} ->
-            %% TODO: ADD SOME CODE
+            %% DONE: ADD SOME CODE
+            Leader ! {join, Peer},
             slave(Name, Master, Leader, Slaves);
         {msg, Msg} ->
-            %% TODO: ADD SOME CODE
+            %% DONE: ADD SOME CODE
+            Master ! {deliver, Msg},
             slave(Name, Master, Leader, Slaves);
         {view, Leader, NewSlaves} ->
-            slave(Name, Master, Leader, ...);  %% TODO: COMPLETE
+            slave(Name, Master, Leader, NewSlaves);  %% DONE: COMPLETE
         stop ->
             ok;
         Error ->
