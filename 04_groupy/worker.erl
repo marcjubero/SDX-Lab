@@ -20,8 +20,8 @@ init(Name, Module, Peer, Sleep) ->
     receive
         joined ->
             Ref = make_ref(),
-            Cast ! {mcast, {state_req, Ref, self()}},
-            Color = state_transfer(Ref),
+            Cast ! {mcast, {state_req, Ref}},
+            Color = state_transfer(Cast, Ref),
             if Color /= stop ->
                  init_cont(Name, Cast, Color, Sleep),
                  Cast ! stop;
@@ -29,20 +29,25 @@ init(Name, Module, Peer, Sleep) ->
                  Cast ! stop
             end;
         {error, Error} ->
-            io:format("worker ~s: error: ~s~n", [Name, Error])
+            io:format("worker ~s: error: ~s~n", [Name, Error]);
+        stop -> 
+            ok
     end.
 
-state_transfer(Ref) ->
+state_transfer(Cast, Ref) ->
     receive
-        {deliver, {state_req, Ref, _}} ->
+        {deliver, {state_req, Ref}} ->
             receive
-                {set_state, Ref, Color} ->
-                    Color;
-                stop -> stop
+                {deliver, {set_state, Ref, Color}} ->
+                    Color
             end;
-        stop -> stop;
+        {join, Peer} ->
+            Cast ! {join, Peer},
+            state_transfer(Cast, Ref);
+        stop -> 
+            stop;
         _Ignore ->
-            state_transfer(Ref)
+            state_transfer(Cast, Ref)
     end.
 
 init_cont(Name, Cast, Color, Sleep) ->
@@ -61,10 +66,10 @@ worker(Name, Cast, Color, Gui, Sleep) ->
             NewColor = change_color(N, Color),
             Gui ! {color, NewColor},
             worker(Name, Cast, NewColor, Gui, Sleep);
-        {deliver, {state_req, Ref, From}} ->
-            From !  {set_state, Ref, Color},
+        {deliver, {state_req, Ref}} ->
+            Cast ! {mcast, {set_state, Ref, Color}},
             worker(Name, Cast, Color, Gui, Sleep);
-        {set_state, _, _} ->
+        {deliver, {set_state, _, _}} ->
             worker(Name, Cast, Color, Gui, Sleep);
         {join, Peer} ->
             Cast ! {join, Peer},
@@ -75,6 +80,7 @@ worker(Name, Cast, Color, Gui, Sleep) ->
             timer:send_after(Wait, cast_change),
             worker(Name, Cast, Color, Gui, Sleep);
         stop ->
+            Cast ! stop,
             ok;
         Error ->
             io:format("worker ~s: strange message: ~w~n", [Name, Error]),
