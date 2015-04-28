@@ -11,26 +11,31 @@ start(Module, Sleep) ->
 init(Module, Sleep) ->
     %P = self(),
     P = worker:start("P1", Module, Sleep),
+    register(a,P),
         
     spawn('p2@127.0.0.1', fun() -> group_leader(whereis(user), self()), 
-                          worker:start("P2", Module, P, Sleep) 
+                          P2 = worker:start("P2", Module, P, Sleep), 
+                          register(b, P2)
                           end),
     spawn('p3@127.0.0.1', fun() -> group_leader(whereis(user), self()), 
-                          worker:start("P3", Module, P, Sleep) 
+                          P3 = worker:start("P3", Module, P, Sleep) , 
+                          register(c, P3)
                           end),
     spawn('p4@127.0.0.1', fun() -> group_leader(whereis(user), self()), 
-                          worker:start("P4", Module, P, Sleep) 
+                          P4 = worker:start("P4", Module, P, Sleep) , 
+                          register(d, P4)
                           end),
     spawn('p5@127.0.0.1', fun() -> group_leader(whereis(user), self()), 
-                          worker:start("P5", Module, P, Sleep) 
+                          P5 = worker:start("P5", Module, P, Sleep) , 
+                          register(e, P5)
                           end).
     
 stop() ->
-    stop('p1@127.0.0.1'),
-    stop('p2@127.0.0.1'),
-    stop('p3@127.0.0.1'),
-    stop('p4@127.0.0.1'),
-    stop('p5@127.0.0.1').
+    stop({a,'p1@127.0.0.1'}),
+    stop({b,'p2@127.0.0.1'}),
+    stop({c,'p3@127.0.0.1'}),
+    stop({d,'p4@127.0.0.1'}),
+    stop({e,'p5@127.0.0.1'}).
 
 stop(Name) ->
     case whereis(Name) of
