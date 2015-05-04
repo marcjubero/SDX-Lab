@@ -20,12 +20,12 @@ init(Name, Grp, Master) ->
     Self = self(), 
     Grp ! {join, Self},
     receive
-        {view, Leader, Slaves} ->
+        {view, N, Leader, Slaves} ->
             Master ! joined,
             NewRef = erlang:monitor(process, Leader),
             {A1,A2,A3} = now(),
 	    random:seed(A1, A2, A3),
-            slave(Name, Master, Leader, Slaves,NewRef,0,[])
+            slave(Name, Master, Leader, Slaves,NewRef,N,{view, N, Leader, Slaves})
     after 
 	1000 ->
 	    Master ! {error, "no reply from leader"}
