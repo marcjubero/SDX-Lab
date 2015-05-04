@@ -1,4 +1,4 @@
--module(gms2crash).
+-module(gms3).
 -export([start/1, start/2]).
 -define(arghh,100).
 
@@ -34,14 +34,14 @@ init(Name, Grp, Master) ->
 leader(Name, Master, Slaves, N) ->    						%% CAMBIO
     receive
         {mcast, Msg} ->
-            bcast(Name, {msg, N,Msg}, Slaves),  %% DONE: COMPLETE  %% CAMBIO
+            bcast(Name, {msg, N, Msg}, Slaves),  %% DONE: COMPLETE  %% CAMBIO
             Master ! {deliver, Msg},
             %% DONE: ADD SOME CODE
             leader(Name, Master, Slaves, N+1);				%% CAMBIO
         {join, Peer} ->
             NewSlaves = lists:append(Slaves, [Peer]),           
-            bcast(Name, {view,N, self(), NewSlaves}, NewSlaves),  %% DONE: COMPLETE		%% CAMBIO
-            leader(Name, Master, NewSlaves,N+1);  %% DONE: COMPLETE		%% CAMBIO
+            bcast(Name, {view, N, self(), NewSlaves}, NewSlaves),  %% DONE: COMPLETE		%% CAMBIO
+            leader(Name, Master, NewSlaves, N+1);  %% DONE: COMPLETE		%% CAMBIO
         stop ->
             ok;
         Error ->
@@ -74,26 +74,18 @@ slave(Name, Master, Leader, Slaves, Ref, N, Last) ->    		%% CAMBIO
             %% DONE: ADD SOME CODE
             Leader ! {join, Peer},
             slave(Name, Master, Leader, Slaves, Ref, N, Last);			%% CAMBIO
-        {msg, Msg} ->										
-			%% TODO: sacar la N del mensaje, y I = N, o quizá ya está??
-			{msg, I, _} when I < N -> %% TODO discard
-			{msg, I, _} when I > N ->  %% TODO holdback queue?  creo que nunca pasa porque leader manda como máximo 1 mensaje que llega a todos porque sólo pasa cuando se muere justo durante el bcast
-			{msg, I, _} when I == N ->  
-				%% DONE: ADD SOME CODE
-				Master ! {deliver, Msg},
-				slave(Name, Master, Leader, Slaves, Ref,N+1,Msg);			%% CAMBIO
-        {view, I, Leader, NewSlaves} ->							%% CAMBIO
-			when I < N -> %% TODO discard						%% CAMBIO
-			when I > N ->  %% TODO holdback queue?	%% CAMBIO
-			when I == N ->  						%% CAMBIO
-				slave(Name, Master, Leader, NewSlaves, Ref,N+1, view);  %% CAMBIO
+		{msg, I, _} when I < N -> 
+			slave(Name, Master, Leader, Slaves, Ref, N, Last);
+		{msg, I, Msg} ->  
+			%% DONE: ADD SOME CODE
+			Master ! {deliver, Msg},
+			slave(Name, Master, Leader, Slaves, Ref, I+1, {msg, I, Msg});			%% CAMBIO
+        {view, I, _, _} when I < N ->							%% CAMBIO
+			slave(Name, Master, Leader, Slaves, Ref, N, Last);
         {view, I, NewLeader, NewSlaves} ->						%% CAMBIO
-			when I < N -> %% TODO discard						%% CAMBIO
-			when I > N ->  %% TODO holdback queue?	%% CAMBIO
-			when I == N ->  						%% CAMBIO
-				erlang:demonitor(Ref, [flush]),
-				NewRef = erlang:monitor(process, NewLeader),
-				slave(Name, Master, NewLeader, NewSlaves, NewRef,N+1, view);		%% TODO
+			erlang:demonitor(Ref, [flush]),
+			NewRef = erlang:monitor(process, NewLeader),
+			slave(Name, Master, NewLeader, NewSlaves, NewRef,I+1, {view, I, NewLeader, NewSlaves});		%% TODO
 		{'DOWN', _Ref, process, Leader, _Reason} ->
 			election(Name, Master, Slaves,N,Last);							%% CAMBIO
         stop ->
@@ -101,12 +93,13 @@ slave(Name, Master, Leader, Slaves, Ref, N, Last) ->    		%% CAMBIO
         Error ->
             io:format("slave ~s: strange message ~w~n", [Name, Error])
     end.
+
 election(Name, Master, Slaves, N, Last) ->						%% CAMBIO
     Self = self(),
     case Slaves of
-	[Self|Rest] ->
-	    bcast(Name,{view,N,Self,Rest},Rest),					%%CAMBIO
-	    bcast(Name,Last,Rest),									%% CAMBIO: hacer un broadcast de su último mensaje recibido
+	[Self|Rest] ->					%%CAMBIO
+	    bcast(Name,Last,Rest),	
+	    bcast(Name,{view,N,Self,Rest},Rest),								%% CAMBIO: hacer un broadcast de su último mensaje recibido
 	    leader(Name,Master,Rest,N+1); %% TODO: COMPLETE				%% CAMBIO
 	[NewLeader|Rest] ->
 	    NewRef = erlang:monitor(process, NewLeader),
