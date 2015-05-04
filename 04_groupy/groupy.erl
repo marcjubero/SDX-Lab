@@ -9,7 +9,6 @@ start(Module, Sleep) ->
     register(groupy, spawn(fun() -> init(Module, Sleep) end)).
 
 init(Module, Sleep) ->
-    %P = self(),
     P = worker:start("P1", Module, Sleep),
     register(a,P),
         
@@ -31,17 +30,8 @@ init(Module, Sleep) ->
                           end).
     
 stop() ->
-    stop({a,'p1@127.0.0.1'}),
-    stop({b,'p2@127.0.0.1'}),
-    stop({c,'p3@127.0.0.1'}),
-    stop({d,'p4@127.0.0.1'}),
-    stop({e,'p5@127.0.0.1'}).
-
-stop(Name) ->
-    case whereis(Name) of
-        undefined ->
-            ok;
-        Pid ->
-            Pid ! stop
-    end.
-
+    {a,'p1@127.0.0.1'} ! stop,
+    {b,'p2@127.0.0.1'} ! stop,
+    {c,'p3@127.0.0.1'} ! stop,
+    {d,'p4@127.0.0.1'} ! stop,
+    {e,'p5@127.0.0.1'} ! stop.
