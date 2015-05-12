@@ -1,8 +1,11 @@
 -module(cache).
--export([lookup/2, add/4, remove/2 ]).
+-export([new/0, lookup/2, add/4, remove/2]).
+
+new() -> 
+  [].
 
 lookup(Name,Cache) -> 
-  case list:keyfind(Name,1,Cache) of
+  case lists:keyfind(Name,1,Cache) of
     false -> 
       io:format("unknown ~n", []),
       unknown;
@@ -16,9 +19,9 @@ lookup(Name,Cache) ->
   end.
       
 add(Name,Expire,Reply,Updated) ->
-  list:keystore(Name,1,{Name,Reply,Expire},Updated).
+  lists:keystore(Name,1,Updated,{Name,Reply,Expire}).
 
 
 remove(Name,Cache) -> 
-  list:keydelete(Name,1,Cache).
+  lists:keydelete(Name,1,Cache).
 
