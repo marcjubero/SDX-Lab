@@ -18,13 +18,13 @@ init(MyKey, PeerPid) ->
     node(MyKey, Predecessor, Successor).
 
 connect(MyKey, nil) ->
-    {ok, {... , ...}};    %% TODO: ADD SOME CODE
+    {ok, {MyKey , self()}};    %% TODO: ADD SOME CODE
 connect(_, PeerPid) ->
     Qref = make_ref(),
     PeerPid ! {key, Qref, self()},
     receive
         {Qref, Skey} ->
-            {ok, {... , ...}}    %% TODO: ADD SOME CODE
+            {ok, {Skey , PeerPid}}    %% TODO: ADD SOME CODE
     after ?Timeout ->
         io:format("Timeout: no response from ~w~n", [PeerPid])
     end.
@@ -64,20 +64,20 @@ stabilize(Pred, MyKey, Successor) ->
   {Skey, Spid} = Successor,
   case Pred of
       nil ->
-          %% TODO: ADD SOME CODE
+	  Spid ! {notify, {MyKey, self()}},
           Successor;
       {MyKey, _} ->
           Successor;
       {Skey, _} ->
-          %% TODO: ADD SOME CODE
+          Spid ! {notify, {MyKey, self()}},
           Successor;
       {Xkey, Xpid} ->
             case key:between(Xkey, MyKey, Skey) of
-                true ->
-                    %% TODO: ADD SOME CODE 
-                    %% TODO: ADD SOME CODE 
+                true ->                   
+                    self() ! stabilize,	%% TODO: CHECK
+                    Pred;		%% TODO: CHECK 
                 false ->
-                    %% TODO: ADD SOME CODE
+                    Spid ! {notify, {MyKey, self()}},  %% TODO: CHECK
                     Successor
             end
     end.
@@ -96,11 +96,11 @@ request(Peer, Predecessor) ->
 notify({Nkey, Npid}, MyKey, Predecessor) ->
     case Predecessor of
         nil ->
-            %% TODO: ADD SOME CODE 
+            {Nkey, Npid};	%% TODO: CHECK
         {Pkey,  _} ->
             case key:between(Nkey, Pkey, MyKey) of
                 true ->
-                    %% TODO: ADD SOME CODE
+                    {Nkey, Npid}; %% TODO: CHECK
                 false -> 
                     Predecessor
             end
