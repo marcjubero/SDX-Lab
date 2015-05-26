@@ -1,4 +1,4 @@
--module(node1).
+-module(node2).
 -export([start/1, start/2]).
 
 -define(Stabilize, 1000).
@@ -18,14 +18,14 @@ init(MyKey, PeerPid) ->
     node(MyKey, Predecessor, Successor).
 
 connect(MyKey, nil) ->
-    {ok, {MyKey , self()}};    %% TODO: ADD SOME CODE
+    {ok, {MyKey , self()}};   
 connect(_, PeerPid) ->
     Qref = make_ref(),
     PeerPid ! {key, Qref, self()},
     receive
         {Qref, Skey} ->
 	    io:format("Ueah!"),
-            {ok, {Skey , PeerPid}}    %% TODO: ADD SOME CODE
+            {ok, {Skey , PeerPid}}   
     after ?Timeout ->
         io:format("Timeout: no response from ~w~n", [PeerPid])
     end.
@@ -33,33 +33,102 @@ connect(_, PeerPid) ->
 schedule_stabilize() ->
     timer:send_interval(?Stabilize, self(), stabilize).
 
-node(MyKey, Predecessor, Successor) ->
+node(MyKey, Predecessor, Successor, Store) ->
     receive 
         {key, Qref, PeerPid} ->
             PeerPid ! {Qref, MyKey},
-            node(MyKey, Predecessor, Successor);
+            node(MyKey, Predecessor, Successor, Store);
         {notify, New} ->
             Pred = notify(New, MyKey, Predecessor),
-            node(MyKey, Pred, Successor);
+            node(MyKey, Pred, Successor, Store);
         {request, Peer} ->
             request(Peer, Predecessor),
-            node(MyKey, Predecessor, Successor);
+            node(MyKey, Predecessor, Successor, Store);
         {status, Pred} ->
             Succ = stabilize(Pred, MyKey, Successor),
-            node(MyKey, Predecessor, Succ);
+            node(MyKey, Predecessor, Succ, Store);
         stabilize ->
             stabilize(Successor),
-            node(MyKey, Predecessor, Successor);
+            node(MyKey, Predecessor, Successor, Store);
         probe ->
             create_probe(MyKey, Successor),
-            node(MyKey, Predecessor, Successor);
+            node(MyKey, Predecessor, Successor, Store);
         {probe, MyKey, Nodes, T} ->
             remove_probe(MyKey, Nodes, T),
-            node(MyKey, Predecessor, Successor);
+            node(MyKey, Predecessor, Successor, Store);
         {probe, RefKey, Nodes, T} ->
             forward_probe(RefKey, [MyKey|Nodes], T, Successor),
-            node(MyKey, Predecessor, Successor)
+            node(MyKey, Predecessor, Successor, Store);
+        {add, Key, Value, Qref, Client} ->
+	    Added = add(Key, Value, Qref, Client,
+	    MyKey, Predecessor, Successor, Store),
+	    node(MyKey, Predecessor, Successor, Added);
+	{lookup, Key, Qref, Client} ->
+	    lookup(Key, Qref, Client, MyKey, Predecessor, Successor, Store),
+	    node(MyKey, Predecessor, Successor, Store);
+	{handover, Elements} ->
+	    Merged = storage:merge(Store, Elements),
+	    node(MyKey, Predecessor, Successor, Merged)
    end.
+   
+add(Key, Value, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
+    case key:between(... , ... , ...) of
+	%% TODO: ADD SOME CODE
+	true ->
+	    Added = ... ,
+	    %% TODO: ADD SOME CODE
+	    Client ! {Qref, ok},
+	    Added;
+	false ->
+	    %% TODO: ADD SOME CODE
+	    Store
+    end.
+    
+lookup(Key, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
+    case key:between(... , ... , ...) of
+	%% TODO: ADD SOME CODE
+	true ->
+	    Result = ... ,
+	    %% TODO: ADD SOME CODE
+	    Client ! {Qref, Result};
+	false ->
+	    %% TODO: ADD SOME CODE
+    end.
+    
+notify({Nkey, Npid}, MyKey, Predecessor, Store) ->
+    case Predecessor of
+	nil ->
+	    Keep = handover(Store, MyKey, Nkey, Npid),
+	    %% TODO: ADD SOME CODE
+	{Pkey, _} ->
+	    case key:between(Nkey, Pkey, MyKey) of
+		true ->
+		    %% TODO: ADD SOME CODE
+		    %% TODO: ADD SOME CODE
+		false ->
+		    {Predecessor, Store}
+	    end
+    end.
+    
+    
+
+notify({Nkey, Npid}, MyKey, Predecessor) ->
+case Predecessor of
+    nil ->
+	{Nkey, Npid};
+    {Pkey,  _} ->
+	case key:between(Nkey, Pkey, MyKey) of
+	    true ->
+		{Nkey, Npid};
+	    false -> 
+		Predecessor
+	end
+end.
+
+handover(Store, MyKey, Nkey, Npid) ->
+    {Keep, Leave} = storage:split(MyKey, Nkey, Store),
+    Npid ! {handover, Leave},
+    Keep.
 
 stabilize(Pred, MyKey, Successor) ->
   {Skey, Spid} = Successor,
@@ -75,10 +144,10 @@ stabilize(Pred, MyKey, Successor) ->
       {Xkey, Xpid} ->
             case key:between(Xkey, MyKey, Skey) of
                 true ->                   
-                    self() ! stabilize,	%% TODO: CHECK
-                    Pred;		%% TODO: CHECK 
+                    self() ! stabilize,	
+                    Pred;		 
                 false ->
-                    Spid ! {notify, {MyKey, self()}},  %% TODO: CHECK
+                    Spid ! {notify, {MyKey, self()}},  
                     Successor
             end
     end.
@@ -92,19 +161,6 @@ request(Peer, Predecessor) ->
             Peer ! {status, nil};
         {Pkey, Ppid} ->
             Peer ! {status, {Pkey, Ppid}}
-    end.
-
-notify({Nkey, Npid}, MyKey, Predecessor) ->
-    case Predecessor of
-        nil ->
-            {Nkey, Npid};	%% TODO: CHECK
-        {Pkey,  _} ->
-            case key:between(Nkey, Pkey, MyKey) of
-                true ->
-                    {Nkey, Npid}; %% TODO: CHECK
-                false -> 
-                    Predecessor
-            end
     end.
 
 create_probe(MyKey, {_, Spid}) ->
