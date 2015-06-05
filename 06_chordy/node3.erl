@@ -1,4 +1,4 @@
--module(node2).
+-module(node3).
 -export([start/1, start/2]).
 
 -define(Stabilize, 1000).
@@ -15,10 +15,10 @@ init(MyKey, PeerPid) ->
     Predecessor = nil,
     {ok, Successor} = connect(MyKey, PeerPid),
     schedule_stabilize(),    
-    node(MyKey, Predecessor, Successor,storage:create()).
+    node(MyKey, Predecessor, Successor,nil,storage:create()).
 
 connect(MyKey, nil) ->
-    {ok, {MyKey , self()}};   
+    {ok, {MyKey , nil, self()}};   
 connect(_, PeerPid) ->
     Qref = make_ref(),
     PeerPid ! {key, Qref, self()},
@@ -150,7 +150,7 @@ stabilize(Pred, Nx, MyKey, Successor) ->
 stabilize({_,_, Spid}) ->
     Spid ! {request, self()}.
 
-request(Peer, Predecessor, {Skey, Spid}) ->
+request(Peer, Predecessor, {Skey, _, Spid}) ->
 	case Predecessor of
 		nil ->
 			Peer ! {status, nil, {Skey, Spid}};
@@ -158,7 +158,7 @@ request(Peer, Predecessor, {Skey, Spid}) ->
 			Peer ! {status, {Pkey, Ppid}, {Skey, Spid}}
 	end.
 
-create_probe(MyKey, {_, Spid}, Store) ->
+create_probe(MyKey, {_, _, Spid}, Store) ->
     Spid ! {probe, MyKey, [MyKey], erlang:now()},
     io:format("Create probe ~w! Store: ~w~n", [MyKey,Store]).
 	
@@ -166,7 +166,7 @@ remove_probe(MyKey, Nodes, T) ->
     Time = timer:now_diff(erlang:now(), T) div 1000,
     io:format("Received probe ~w in ~w ms Ring: ~w~n", [MyKey, Time, Nodes]).
 	
-forward_probe(RefKey, Nodes, T, {_, Spid}) ->
+forward_probe(RefKey, Nodes, T, {_, _, Spid}) ->
     Spid ! {probe, RefKey, Nodes, T},
     io:format("Forward probe ~w!~n", [RefKey]).
 
