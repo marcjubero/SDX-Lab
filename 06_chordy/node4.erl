@@ -1,4 +1,4 @@
--module(node3).
+-module(node4).
 -export([start/1, start/2]).
 
 -define(Stabilize, 1000).
@@ -53,7 +53,7 @@ node(MyKey, Predecessor, Successor, Next, Store, Replica) ->
             stabilize(Successor),
             node(MyKey, Predecessor, Successor, Next, Store, Replica);
         probe ->
-            create_probe(MyKey, Successor, Store),
+            create_probe(MyKey, Successor, Store, Replica),
             node(MyKey, Predecessor, Successor, Next, Store, Replica);
         {probe, MyKey, Nodes, T} ->
             remove_probe(MyKey, Nodes, T),
@@ -66,7 +66,7 @@ node(MyKey, Predecessor, Successor, Next, Store, Replica) ->
 		    MyKey, Predecessor, Successor, Store),
 		    node(MyKey, Predecessor, Successor, Next, Added, Replica);
 		{replicate, Key, Value} ->
-			NewReplica = storage:add(Key,Value,Replica)
+			NewReplica = storage:add(Key,Value,Replica),
 		    node(MyKey, Predecessor, Successor, Next, Store, NewReplica);
 		{pushreplica, NewReplica} ->
 			node(MyKey, Predecessor, Successor, Next, Store, NewReplica);
@@ -87,10 +87,10 @@ down(Ref, {_, Ref, _}, Successor, Next, Store, Replica) ->
 	NewStore = storage:merge(Store,Replica),
 	{nil, Successor, Next, NewStore,nil};
 
-down(Ref, Predecessor, {_, Ref, _}, {Nkey, Npid}, _, _) ->
+down(Ref, Predecessor, {_, Ref, _}, {Nkey, Npid}, Store, Replica) ->
 	Nref = monit(Npid),
 	self() ! stabilize,
-	{Predecessor, {Nkey, Nref, Npid}, nil}.
+	{Predecessor, {Nkey, Nref, Npid}, nil, Store, Replica}.
 
 
 add(Key, Value, Qref, Client, MyKey, {Pkey, _,_}, {_,_, Spid}, Store) ->
@@ -170,9 +170,9 @@ request(Peer, Predecessor, {Skey, _, Spid}) ->
 			Peer ! {status, {Pkey, Ppid}, {Skey, Spid}}
 	end.
 
-create_probe(MyKey, {_, _, Spid}, Store) ->
+create_probe(MyKey, {_, _, Spid}, Store, Replica) ->
     Spid ! {probe, MyKey, [MyKey], erlang:now()},
-    io:format("Create probe ~w! Store: ~w~n", [MyKey,Store]).
+    io:format("Create probe ~w! Store: ~w! Replica: ~w~n", [MyKey,Store,Replica]).
 	
 remove_probe(MyKey, Nodes, T) ->
     Time = timer:now_diff(erlang:now(), T) div 1000,
