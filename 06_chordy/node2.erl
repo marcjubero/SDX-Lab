@@ -39,8 +39,8 @@ node(MyKey, Predecessor, Successor, Store) ->
             PeerPid ! {Qref, MyKey},
             node(MyKey, Predecessor, Successor, Store);
         {notify, New} ->
-            Pred = notify(New, MyKey, Predecessor),
-            node(MyKey, Pred, Successor, Store);
+            {Pred,NewStore} = notify(New, MyKey, Predecessor,Store),
+            node(MyKey, Pred, Successor, NewStore);
         {request, Peer} ->
             request(Peer, Predecessor),
             node(MyKey, Predecessor, Successor, Store);
@@ -51,7 +51,7 @@ node(MyKey, Predecessor, Successor, Store) ->
             stabilize(Successor),
             node(MyKey, Predecessor, Successor, Store);
         probe ->
-            create_probe(MyKey, Successor),
+            create_probe(MyKey, Successor, Store),
             node(MyKey, Predecessor, Successor, Store);
         {probe, MyKey, Nodes, T} ->
             remove_probe(MyKey, Nodes, T),
@@ -60,51 +60,47 @@ node(MyKey, Predecessor, Successor, Store) ->
             forward_probe(RefKey, [MyKey|Nodes], T, Successor),
             node(MyKey, Predecessor, Successor, Store);
         {add, Key, Value, Qref, Client} ->
-	    Added = add(Key, Value, Qref, Client,
-	    MyKey, Predecessor, Successor, Store),
-	    node(MyKey, Predecessor, Successor, Added);
-	{lookup, Key, Qref, Client} ->
-	    lookup(Key, Qref, Client, MyKey, Predecessor, Successor, Store),
-	    node(MyKey, Predecessor, Successor, Store);
-	{handover, Elements} ->
-	    Merged = storage:merge(Store, Elements),
-	    node(MyKey, Predecessor, Successor, Merged)
+		    Added = add(Key, Value, Qref, Client,
+		    MyKey, Predecessor, Successor, Store),
+		    node(MyKey, Predecessor, Successor, Added);
+		{lookup, Key, Qref, Client} ->
+		    lookup(Key, Qref, Client, MyKey, Predecessor, Successor, Store),
+		    node(MyKey, Predecessor, Successor, Store);
+		{handover, Elements} ->
+		    Merged = storage:merge(Store, Elements),
+		    node(MyKey, Predecessor, Successor, Merged)
    end.
    
 add(Key, Value, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
-    case key:between(... , ... , ...) of
-	%% TODO: ADD SOME CODE
+    case key:between(Key , Pkey , MyKey) of
 	true ->
-	    Added = ... ,
-	    %% TODO: ADD SOME CODE
+	    Added = store:add(Key,Value,Store) ,
 	    Client ! {Qref, ok},
 	    Added;
 	false ->
-	    %% TODO: ADD SOME CODE
+	    Spid ! {add, Key, Value, Qref, Client},
 	    Store
     end.
     
 lookup(Key, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
-    case key:between(... , ... , ...) of
-	%% TODO: ADD SOME CODE
+    case key:between(Key , Pkey , MyKey) of
 	true ->
-	    Result = ... ,
-	    %% TODO: ADD SOME CODE
+	    Result = store:lookup(Key,Store) ,
 	    Client ! {Qref, Result};
 	false ->
-	    %% TODO: ADD SOME CODE
+	    Spid ! {lookup, Key, Qref, Client},
     end.
     
 notify({Nkey, Npid}, MyKey, Predecessor, Store) ->
     case Predecessor of
 	nil ->
 	    Keep = handover(Store, MyKey, Nkey, Npid),
-	    %% TODO: ADD SOME CODE
+	    {{Nkey, Npid},Keep};
 	{Pkey, _} ->
 	    case key:between(Nkey, Pkey, MyKey) of
 		true ->
-		    %% TODO: ADD SOME CODE
-		    %% TODO: ADD SOME CODE
+		    Keep = handover(Store, MyKey, Nkey, Npid),
+	    	{{Nkey, Npid},Keep};
 		false ->
 		    {Predecessor, Store}
 	    end
@@ -165,7 +161,7 @@ request(Peer, Predecessor) ->
 
 create_probe(MyKey, {_, Spid}) ->
     Spid ! {probe, MyKey, [MyKey], erlang:now()},
-    io:format("Create probe ~w!~n", [MyKey]).
+    io:format("Create probe ~w! Store: ~w~n", [MyKey]).
 	
 remove_probe(MyKey, Nodes, T) ->
     Time = timer:now_diff(erlang:now(), T) div 1000,
