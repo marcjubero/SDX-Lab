@@ -15,7 +15,7 @@ init(MyKey, PeerPid) ->
     Predecessor = nil,
     {ok, Successor} = connect(MyKey, PeerPid),
     schedule_stabilize(),    
-    node(MyKey, Predecessor, Successor).
+    node(MyKey, Predecessor, Successor,store:create()).
 
 connect(MyKey, nil) ->
     {ok, {MyKey , self()}};   
@@ -88,7 +88,7 @@ lookup(Key, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
 	    Result = store:lookup(Key,Store) ,
 	    Client ! {Qref, Result};
 	false ->
-	    Spid ! {lookup, Key, Qref, Client},
+	    Spid ! {lookup, Key, Qref, Client}
     end.
     
 notify({Nkey, Npid}, MyKey, Predecessor, Store) ->
@@ -105,21 +105,6 @@ notify({Nkey, Npid}, MyKey, Predecessor, Store) ->
 		    {Predecessor, Store}
 	    end
     end.
-    
-    
-
-notify({Nkey, Npid}, MyKey, Predecessor) ->
-case Predecessor of
-    nil ->
-	{Nkey, Npid};
-    {Pkey,  _} ->
-	case key:between(Nkey, Pkey, MyKey) of
-	    true ->
-		{Nkey, Npid};
-	    false -> 
-		Predecessor
-	end
-end.
 
 handover(Store, MyKey, Nkey, Npid) ->
     {Keep, Leave} = storage:split(MyKey, Nkey, Store),
@@ -159,9 +144,9 @@ request(Peer, Predecessor) ->
             Peer ! {status, {Pkey, Ppid}}
     end.
 
-create_probe(MyKey, {_, Spid}) ->
+create_probe(MyKey, {_, Spid}, Store) ->
     Spid ! {probe, MyKey, [MyKey], erlang:now()},
-    io:format("Create probe ~w! Store: ~w~n", [MyKey]).
+    io:format("Create probe ~w! Store: ~w~n", [MyKey,Store]).
 	
 remove_probe(MyKey, Nodes, T) ->
     Time = timer:now_diff(erlang:now(), T) div 1000,
