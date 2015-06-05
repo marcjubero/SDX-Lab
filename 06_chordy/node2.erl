@@ -15,7 +15,7 @@ init(MyKey, PeerPid) ->
     Predecessor = nil,
     {ok, Successor} = connect(MyKey, PeerPid),
     schedule_stabilize(),    
-    node(MyKey, Predecessor, Successor,store:create()).
+    node(MyKey, Predecessor, Successor,storage:create()).
 
 connect(MyKey, nil) ->
     {ok, {MyKey , self()}};   
@@ -60,8 +60,7 @@ node(MyKey, Predecessor, Successor, Store) ->
             forward_probe(RefKey, [MyKey|Nodes], T, Successor),
             node(MyKey, Predecessor, Successor, Store);
         {add, Key, Value, Qref, Client} ->
-		    Added = add(Key, Value, Qref, Client,
-		    MyKey, Predecessor, Successor, Store),
+		    Added = add(Key, Value, Qref, Client, MyKey, Predecessor, Successor, Store),
 		    node(MyKey, Predecessor, Successor, Added);
 		{lookup, Key, Qref, Client} ->
 		    lookup(Key, Qref, Client, MyKey, Predecessor, Successor, Store),
@@ -74,7 +73,7 @@ node(MyKey, Predecessor, Successor, Store) ->
 add(Key, Value, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
     case key:between(Key , Pkey , MyKey) of
 	true ->
-	    Added = store:add(Key,Value,Store) ,
+	    Added = storage:add(Key,Value,Store) ,
 	    Client ! {Qref, ok},
 	    Added;
 	false ->
@@ -85,7 +84,7 @@ add(Key, Value, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
 lookup(Key, Qref, Client, MyKey, {Pkey, _}, {_, Spid}, Store) ->
     case key:between(Key , Pkey , MyKey) of
 	true ->
-	    Result = store:lookup(Key,Store) ,
+	    Result = storage:lookup(Key,Store) ,
 	    Client ! {Qref, Result};
 	false ->
 	    Spid ! {lookup, Key, Qref, Client}
