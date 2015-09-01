@@ -12,10 +12,10 @@
 - [x] Causal Order (causal.erl)
 - [x] Total order (total.erl)
 
-##### 4. Groupy
+##### 4. Groupy (Completed)
 - [x] Gms1 (No failures handling)
 - [x] Gms2 (Failures handling)
 
-#### 5. Namy
+##### 5. Namy (Completed)
 
-#### 6. Chordy
+##### 6. Chordy (Completed)
