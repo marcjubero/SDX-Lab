@@ -14,4 +14,8 @@
 
 ##### 4. Groupy
 - [x] Gms1 (No failures handling)
-- [ ] Gms2 (Failures handling)
+- [x] Gms2 (Failures handling)
+
+#### 5. Namy
+
+#### 6. Chordy
