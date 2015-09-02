@@ -1,6 +1,6 @@
 -module(namy).
 -export([test/2]).
--define(timeout, 2000).
+-define(timeout, 0).
 
 test(Host, Resolver) ->
     io:format("Client: looking up ~w~n", [Host]),

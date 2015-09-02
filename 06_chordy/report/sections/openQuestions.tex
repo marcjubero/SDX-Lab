@@ -1,0 +1,20 @@
+\clearpage
+\section{Open questions}
+
+\subsection{Building a ring}
+\begin{itemize}
+\item What are the pros and cons of a more frequent stabilizing procedure?
+\newline \textit{We would have the relationships between the nodes of the ring much more updated. However, the frequency of the stabilization procceses would keep the nodes more time updating the ring than attending other petitions.}
+\item  Do we have to inform the new node about our decision? How will it know if we have discarded its friendly proposal?
+\newline \textit{If we determine that the friendly proposal is to be rejected, there would be a node between us and the other node. But the other node is assuming that we are its successor. The ring structure is updated in a lazy fashion where the regular scheduled stabilization process is the main mechanism. So, there is no need to inform the other node of our decision as it will detect during the next stabilization process. }
+
+\item  What would happen if we didn’t schedule the stabilize procedure? Would things still work?
+\newline \textit{No, things wouldn't work later on, just during the join procedure a initialization to the successor node would happen. So, a scheduled stabilize procedure is necessary to keep successor and predecessor pointers up to date. }
+\end{itemize}
+
+\subsection{Handling failures}
+\begin{itemize}
+\item What will happen if a node is falsely detected of being dead (e.g. it has only been temporally unavailable)?
+\newline \textit{The lookups would fail, falsely assuming that the data would be lost. 
+\newline This node falsely detected of being dead would just be temporally unavaliable, since the predecessor of this node would set the successor of this node as its own successor, and the successor of the node detected of being dead would unset its predecessor. However, in the next stabilization process the ring would be rearranged.}
+\end{itemize}

@@ -1,0 +1,12 @@
+\section{Introduction}
+
+\textit{
+\newline The main goal of this seminar is to illustrate how works a distributed name server. To this purpose we design a simple architecture based on:
+\begin{itemize}
+    \item \textbf{Server}, responsible for a domain and hold a set of registered hosts.
+    \item \textbf{Resolvers}, help the clients to find the hosts address.
+    \item \textbf{Hosts}, nodes with name and registered on a server.
+    \item \textbf{Clients}, only know the address of a resolver. Clients have to use resolvers to find hosts addresses.
+\end{itemize}
+Clients will send a ping message that will be answered by hosts.
+}

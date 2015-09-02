@@ -1,0 +1,23 @@
+\clearpage
+\section{Open questions}
+
+\subsection{Missing Messages}
+\begin{itemize}
+\item Why is this happening?
+\newline\textit{This happens if some process crashes in the middle of the multicast send, as they don’t check atomicity (all processes or none of them receive the message). \newline This means that some processes get extra messages which make its steps different and so their colours change.
+}
+\end{itemize}
+
+\subsection{What could possibly go wrong}
+\begin{itemize}
+\item How would we have to change the implementation to handle the possibly lost messages? 
+\newline\textit{We could provide the slave with mechanisms to check if the recived  is bigger than the local. If it's true, it means that a message has been lost. We should add a holdback queue or a buffering mechanism in each node}
+
+\item How would this impact performance? 
+\newline\textit{As the queue/buffer grows up the costs of the operations over it will grow as well. The memory used will also be affected by the number of elements that will be stored in it.}
+
+\item What would happen if we wrongly suspect the leader to have crashed?
+\newline\textit{It wouldn't affect the correct work of the system as the old leader would be reelected.}
+\newline\textit{The process would wronlgy assume the death of the leader would initialize an election. THe old leader would be reelected and would resend the last message. Maybe it would slow down the system for a moment but that is all.}
+\end{itemize}
+

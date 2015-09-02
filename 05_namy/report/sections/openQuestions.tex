@@ -1,0 +1,22 @@
+\section{Open questions}
+
+\subsection{Using Cache}
+\begin{itemize}
+\item Discuss what nodes need to know about the change and what happens with cached information in the resolver when we shut down nodes.
+Think about this in our scenario where we map names to process identifiers, but
+also in a real DNS scenario where names are mapped to IP addresses. 
+\newline\textit{Of course, the corresponding servers should be updated which is  already done with the given code. But they also should unregister the entries in the name servers of the parent domains. So, if we unregister, say, a host with the domain www.upc.edu, it only unregisters with its corresponding naming server, at the bottom level of the tree structure of the servers. So if the root server for example has an entry cached for www.upc.edu it will return it on a query although it is no longer valid.
+\newline There should also be a way to comunicate the invalidation to the resolvers.}
+\item Our cache also suffers from old entries that are never removed. Invalid entries are removed and updated but if we never search for the entry we will not remove it. What can we do to solve this issue?
+\newline\textit{We could introduce a method that removes old, invalid entries every certain time, or every certain execution of the resolver.}
+\end{itemize}
+
+\subsection{Recursive Solution}
+\begin{itemize}
+\item Which version can exploit caching better? Justify why. 
+\newline\textit{The recursive version exploits better the caching because the results are stored on the servers while in the iteratve apporoach caching is restricted to the resolver. So the recursive makes better use of caching because it can better use (partial) results already obtained from other queries.}
+\item What is the main drawback of recursive resolution?
+\newline\textit{The drawback is, that is puts a bigger workload on the servers. In the iterative solution the name server only has to do "its part" and when it is done it return the result but in the recursive solution is has to check its cache it if there is no entry, do the work of doing the query to the upper level, wait for the result and return it.
+\newline That is why name servers in the global layer of a name space support only iterative name resolution.
+}
+\end{itemize}

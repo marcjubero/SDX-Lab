@@ -1,0 +1,38 @@
+\clearpage
+\section{Experiments}
+
+\subsection{Building a ring}
+\begin{itemize}
+\item Do some small experiments, to start with in one Erlang machine but then in a network of machines. When connecting nodes on diferent platforms remember to start Erlang in distributed mode (giving a -name argument) and make sure that you use the same cookie (-setcookie).
+\newline \textit{We can find the result of these test in Figure 1, in te Annex section.}
+\end{itemize}
+
+\subsection{Adding a store}
+\begin{itemize}
+\item If we now have a distributed store that can handle new nodes that are added to the ring we might try some performance testing. You need several machines to do this. Assume that we have eight machines and that we will use four in building the ring and four in testing the performance.
+As a first test, we have one node only in the ring and let the four test machines add a number (e.g., 1000) of random elements (key-value pairs)
+to the ring and then do a lookup of the elements, measuring the time it takes. You can use the test procedure given in 'Appendix A', which should be given with the ID of the node to contact.\\\\
+\textit{In these experiments we have to take into account that we have executed 8 instances of erlang under the same machine instead of an instance of erlang on different machines. So, the network latency in these experiments is negligible.}
+\begin{itemize}
+\item How does the performance change if we add another node to the ring?
+\newline \textit{In Figure 11 we can appreciate that the performance when adding a second node decreases signifcally.}
+
+\item Add two more nodes to the ring, any changes?
+\newline \textit{In Figure 12, we can appreciate that the performance with 3 and 4 nodes is practically the same than the scenario with two nodes.}
+
+\item Does it matter if all the test machines access the same node or different nodes in the ring?
+\newline \textit{As we can appreciate in Figures 13 & 14, the performance of this experiments is quiet high respect the previous ones. Note that we increased the number of request per node from 1000 to 10000 in order to achieve to execute tests "simultaneously".}
+\end{itemize}
+\end{itemize}
+
+\subsection{Handling failures}
+\begin{itemize}
+\item Do some experiments to evaluate the behavior of your implementation when nodes can fail.
+\newline \textit{Figures 3 to 7, shows the proper functioning of this version of the third version of node.}
+\end{itemize}
+
+\subsection{Replication}
+\begin{itemize}
+\item Do some experiments to demonstrate that your replication strategy works.
+\newline \textit{Figures 8 to 10, shows the proper functioning of this version of the fourth version of nod.e}
+\end{itemize}

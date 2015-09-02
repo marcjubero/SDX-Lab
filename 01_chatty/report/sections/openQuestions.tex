@@ -1,0 +1,46 @@
+\clearpage
+\section{Open questions}
+
+\subsection{Part one}
+
+\renewcommand{\labelenumi}{\roman{enumi}}
+\begin{enumerate}
+\item Does this solution scale when the number of users increase? \\
+\textit{In the scale of our tests, there is no change in the server performance when the number of connected clients is increased.}
+
+\item What happens if the server fails? \\
+\textit{No message can be sent or recived. We have a centralized infrastructure with one point of failure.}
+
+\item Are the messages from a single client guaranteed to be delivered to any other client in the order they were issued? (hint: search for the ’order of message reception’ in Erlang FAQ) \\
+\textit{Yes, but only within one process.}
+
+\item Are the messages sent concurrently by several clients guaranteed to be delivered to any other client in the order they were issued? \\
+\textit{No, messages will be shown as soon they arrive, no matter the order in which they were sent. To garantize that order could be for example, the task of message queuing system as seen in class.}
+
+\item Is it possible that a client receives a response to a message from another client before receiving the original message from a third client? \\
+\textit{Yes, it is possible. If the client has not recived the original question, there is no mechanism to avoid the answer.}
+
+\item If a user joins/leaves the chat while the server is broadcasting a message, will he receive that message? \\
+\textit{If a user joins the chat while the server is broadcasting a message, the new user will not receive the message because he/she did not be in the server's clients list when the broadcast function was called.\\
+However, if a user leaves the chat while the server is broadcasting a message, the new user will receive the message because he/she was in the server's clients list when the broadcast function was called.}
+\end{enumerate}
+
+
+\clearpage
+\subsection{Part two}
+\begin{enumerate}
+\item What happens if a server fails? \\
+\textit{All the clients connected to that server will be isolated. They will not receive nor send any message.}
+
+\item Do your answers to previous questions iii, iv, and v still hold in this implementation? \\ 
+\textit{Yes, they do.}
+
+\item What happens if there are concurrent requests from servers to join or leave the system? \\
+\textit{Erlang usually serves each request on a separated thread, so in an scenario with many requests, our server can handle all of them at the same time.}
+
+\item What are the advantages and disadvantages of this implementation regarding the previous one?
+\textit{\begin{itemize}
+\item Advantages: The fact of having our network distributed, with different servers, decreases the total connections.
+\item Disadvatages: In the previous one, we had just one server, so if the server crashes all the clients will get noticed. The clients will get a timeout message when they try to send a message. Thus, the clients know that they are not connected to the other clients.\\ However, in this implementation you can have more than one server running with different clients connected to each one. Then, if a server crashes, its clients and the rest of servers will get noticed through a timeout message. But the clients connected to the other servers will not have any knowledge about the crash of that server. Thus, they will not know that they are disconnected from the clients of the crashed server now.
+\end{itemize}}
+\end{enumerate}

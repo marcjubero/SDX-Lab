@@ -6,7 +6,7 @@ start(Name, Domain, Parent) ->
 
 stop(Name) ->
     Name ! {stop,Name},
-    %%unregister(Name).
+    unregister(Name).
 
 init(Domain, Parent) ->
     io:format("Host: create domain ~w at ~w~n", [Domain, Parent]),

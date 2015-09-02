@@ -1,0 +1,43 @@
+
+\section{Open questions}
+
+\subsection{Basic multicast}
+\renewcommand{\labelenumi}{\roman{enumi}}
+\begin{enumerate}
+\item Are the posts displayed in FIFO, causal, and total order? Justify why.
+\textit{\newline First we would like to to recall the definitions of the three orders:
+\begin{itemize}
+\item FIFO: First In first Out. Every post from a given user will be received in the same order.
+\item Casual: Ensures that response posts appear after the messages to which they refer. This definitions is open to interpretation. You might think that this refers to the ordering of messages that directly refer to each other (Subject: sub, Re: sub, Re: Re. sub and so on) but it actually refers to the fact that all the receiving workers already have received all the messages that received the sending worker before sending the message. It is a causal order in this sense: All the workers have the same information as the sending one as they receive the message. The order of these does not have to be the same though.
+\item Total: Allows global message ordering to be consistent. It means that the output of every worker basically is the same because they receive all the messages in the same order.
+\end{itemize}
+Initially we had the following assumption: As every worker is connected to it's own peer, the peers receive the messages in the same order as they were sent and they multicast them in that order. The other peers receive and deliver them also in that order. No active message ordering is necessary for this, as all the messages from the same user have the same route. So we have FIFO ordering in the basic module.
+As we can see in the screenshots and is described in the section 'Experiments', as soon as we introduce jitter there  is no FIFO, causal nor total ordering. The peers deliver the messages in the same order as they receive them as there is no message ordering. But due to the jitter which simulates network delays the peers might not receive the messages in the same order as they were sent.}
+\end{enumerate}
+
+\clearpage
+\subsection{Causal order multicast}
+\renewcommand{\labelenumi}{\roman{enumi}}
+\begin{enumerate}
+\item Are the posts displayed in FIFO, causal, and total order? Justify why.
+\newline \textit{The posts are displayed in causal order. This implementation of the module applies message ordering using vector clocks. As causal order implies FIFO order the messages are displayed in FIFO order as well.
+The messages are delivered in causal order because the module implements message ordering using a hold back-queue. Basically it is the causal ordering using vector clocks as seen in class: A process i sends a message and before sending it, it increments the position i of its vector clock which it sends with the message. Before delivering the message, process j checks two conditions:
+\begin{itemize}
+\item The message is the next expected message from process i: This is true if the position i of the vector clock sent by i is equal to the position i of the vector clock of process j + 1.
+\item Process j has seen all the messages seen by process i before sending the message: This is true if every position except i of the vector clock  of process i is less or equal of the same one of the vector clock of process j.
+\end{itemize}
+If one of these conditions is not true, the message will be hold back in a queue and process j only increments the position i in its vector clock after delivering the message. After delivering a message process j checks its hold-back queue for other message which now have become ready. 
+That is how causal order is maintained.
+There is no total ordering as the messages may arrive in different order. A process must have seen the same messages as the sending process when it sent the message before receiving the message but these may be in different order. In total order there is a global order of the messages so there is no total ordering.}
+\end{enumerate}
+
+\subsection{Total order multicast}
+\renewcommand{\labelenumi}{\roman{enumi}}
+\begin{enumerate}
+\item Are the posts displayed in FIFO, causal, and total order? Justify why.
+\textit{\newline The posts are displayed in total order. This implementation applies a sequencer wich  receives a copy of all the messages and broadcasts messages with order information. This implementation in the same way as the previous one, implements a hold-back queue where the messages will wait until  its sequence number is reached. 
+\newline In this scenario, the sequencer is the bottleneck and the single point of failure.
+\newline The sequencer is also a mechanism to collect all proposals for message’s agreed sequence number and select the largest one as the next agreed sequence number and multicasts it. 
+\newline At this point, receivers update its message tag and reorder its hold-back queue if needed.
+\newline After that process, if the first message is agreed, then it has been delivered.}
+\end{enumerate}

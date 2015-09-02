@@ -1,0 +1,25 @@
+\section{Experiments}
+
+\subsection{Testing}
+\begin{itemize}
+\item Make experiments with several clients asking for name resolution concurrently.
+\newline \textit{The result can be found in Figures 1 and 2.\newline Figure 1 shows us the behaviour uf the servers when a cleint asks for a name. \newline Figure 2 shows how a client gets the response from the server.}
+
+\item Shut down a host (by sending a stop message) and try to solve its name again. \newline What is happening?
+\newline\textit{The father continued returning the name of the npt deregistered son. \nreline But when the client tries to ping the son, there's no answer.}
+
+\item Modify the server and the host code so that when they are shut down, they unregister their entry in their corresponding parent domain and repeat experiment ii) \newline What is different now?
+\newline\textit{Figures 3 and 4 illustrates the behaviour of our code in this situation}
+\end{itemize}
+
+\subsection{Using Cache}
+\begin{itemize}
+\item In our initial setup, the time-to-live (TTL) is zero seconds.
+Set a long TTL (i.e. minutes), and check what happens when we query for a host name, shut down it, start it up registered under the same name, and finally
+query it again. 
+\newline\textit{In Figure 5 we can see the result of using cache and have a server down. The TTL is not yet expired, and we've got a hit when we want to resolve a down server.}
+
+\item Do experiments with TTL equal to 10 seconds and try to quantify the amount of message traffic reduced when you repeat the same query during 1 minute.
+\newline\textit{During the first 10 seconds the cache is full, the query time is practically negligible.
+After 10 seconds, failure occurs in the cache, and the resolver has to go find the name. This process will occur six times throughout the test minute.}
+\end{itemize}

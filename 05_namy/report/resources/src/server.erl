@@ -9,7 +9,7 @@ start(Domain, Parent) ->
 
 stop() ->
     server ! stop,
-    %%unregister(server).
+    unregister(server).
 
 init() ->
     io:format("Server: create root domain~n"),
